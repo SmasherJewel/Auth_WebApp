@@ -351,7 +351,7 @@ Recommended screenshots:
 
 ## Author
 
-Built and customized by **Code Smasher**.
+Built and customized by **Jewel Uddin**.
 
 ## License
 
