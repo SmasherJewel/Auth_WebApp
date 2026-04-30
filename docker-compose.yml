@@ -1,0 +1,56 @@
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: auth-app-mysql
+    environment:
+      MYSQL_DATABASE: auth_app
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-change-me}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ./auth-backend
+    container_name: auth-app-backend
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      SERVER_PORT: 8082
+      DATABASE_URL: jdbc:mysql://mysql:3306/auth_app
+      DATABASE_USERNAME: root
+      DATABASE_PASSWORD: ${MYSQL_ROOT_PASSWORD:-change-me}
+      JPA_DDL_AUTO: update
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_ISSUER: auth-app
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID}
+      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET}
+      FRONT_END_URL: ${FRONT_END_URL:-http://localhost:5173}
+      FRONT_END_SUCCESS_REDIRECT: ${FRONT_END_SUCCESS_REDIRECT:-http://localhost:5173/oauth/success}
+      FRONT_END_FAILURE_REDIRECT: ${FRONT_END_FAILURE_REDIRECT:-http://localhost:5173/oauth/failure}
+      JWT_COOKIE_SECURE: ${JWT_COOKIE_SECURE:-false}
+      JWT_COOKIE_DOMAIN: ${JWT_COOKIE_DOMAIN:-}
+    ports:
+      - "8082:8082"
+
+  frontend:
+    build:
+      context: ./auth-front
+    container_name: auth-app-frontend
+    depends_on:
+      - backend
+    ports:
+      - "5173:80"
+
+volumes:
+  mysql-data:
